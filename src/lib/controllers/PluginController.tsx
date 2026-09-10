@@ -5,6 +5,7 @@ import { LogController } from './LogController'
 import { TabMasterManager } from '../../state/TabMasterManager'
 import { getCurrentUserId } from '../Utils'
 import { DestructiveModal } from '../../components/generic/DestructiveModal'
+import { reaction } from '../mobx'
 
 function showMigrationModal(okCallback: () => Promise<void>, cancelCallback: () => Promise<void>) {
     showModal(
@@ -48,6 +49,8 @@ export class PluginController {
     private static steamController: SteamController
 
     private static onWakeSub: Unregisterer
+    private static onSuspendSub: Unregisterer | undefined
+    private static onDeviceLock: (() => void) | undefined
     static isDismounted: boolean
 
     /**
@@ -55,6 +58,8 @@ export class PluginController {
      * @param server The serverAPI to use.
      */
     static setup(tabMasterManager: TabMasterManager): void {
+        this.isDismounted = false
+        PythonInterop.isDismounted = false
         this.tabMasterManager = tabMasterManager
         this.steamController = new SteamController()
     }
@@ -68,14 +73,17 @@ export class PluginController {
             async username => {
                 LogController.log(`User logged in. [DEBUG] username: ${username}.`)
                 if (await this.steamController.waitForServicesToInitialize()) {
+                    if (this.isDismounted) return
                     await PluginController.init()
-                    onMount()
+                    if (!this.isDismounted) await onMount()
                 } else {
                     PythonInterop.toast('Error', 'Failed to initialize, try restarting.')
                 }
             },
             async username => {
                 LogController.log(`User logged out. [DEBUG] username: ${username}.`)
+                void this.tabMasterManager.locks.lock()
+                this.tabMasterManager.locks.reset()
             },
             true,
             true
@@ -87,12 +95,23 @@ export class PluginController {
      */
     static async init(): Promise<void> {
         LogController.log('PluginController initialized.')
+        this.tabMasterManager.locks.reset()
 
+        this.onWakeSub?.unregister()
+        this.onSuspendSub?.unregister()
+        this.onDeviceLock?.()
         this.onWakeSub = this.steamController.registerForOnResumeFromSuspend(this.onWakeFromSleep.bind(this))
+        this.onSuspendSub = SteamClient.System.RegisterForOnSuspendRequest?.(() => {
+            void this.tabMasterManager.locks.lock()
+        })
+        this.onDeviceLock = reaction(() => securitystore.IsLockScreenActive(), active => {
+            if (active) void this.tabMasterManager.locks.lock()
+        })
 
         // @ts-ignore
         return new Promise(async (resolve, reject) => {
             const hadLegacySettings = await PythonInterop.setActiveSteamId(getCurrentUserId())
+            await this.tabMasterManager.locks.load(getCurrentUserId())
 
             if (hadLegacySettings instanceof Error) {
                 LogController.raiseError(
@@ -136,6 +155,7 @@ export class PluginController {
      * Function to run when resuming from sleep.
      */
     static onWakeFromSleep() {
+        void this.tabMasterManager.locks.lock()
         this.tabMasterManager.buildTimeBasedFilterTabs()
     }
 
@@ -143,8 +163,13 @@ export class PluginController {
      * Function to run when the plugin dismounts.
      */
     static dismount(): void {
+        this.isDismounted = true
+        void this.tabMasterManager.locks.lock()
+        this.tabMasterManager.locks.reset()
         PythonInterop.dismount()
         if (this.onWakeSub) this.onWakeSub.unregister()
+        this.onSuspendSub?.unregister()
+        this.onDeviceLock?.()
 
         this.tabMasterManager.disposeReactions()
 

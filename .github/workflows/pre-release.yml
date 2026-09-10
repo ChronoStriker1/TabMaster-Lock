@@ -1,9 +1,8 @@
 name: Pre Release
 
 on:
-  push:
-    branches:
-      - "pre-release"
+  # Retained upstream release automation; fork builds use check.yml.
+  workflow_dispatch:
 
 jobs:
   create-release:

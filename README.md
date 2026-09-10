@@ -1,3 +1,46 @@
+# TabMaster Lock
+
+A fork of [TabMaster](https://github.com/Tormak9970/TabMaster), based on upstream 2.16.2 (`cd01770a80a37e0692e76ad8083719c15205f5d9`), with a separate six-digit PIN for selected library tabs. Original history, credits, and license are preserved.
+
+## Lock behavior
+
+- Protect either a custom or default tab using **Protect with PIN** in its options menu. The first protected tab asks you to choose and confirm a PIN.
+- One TabMaster PIN is used per Steam account. Each protected tab unlocks independently.
+- Locked tabs show their title and a lock screen. Their game grid, game count, and edit/duplicate/snapshot actions are unavailable until unlocked.
+- Games remain visible in other tabs, Home, search, and other Steam views. Protection does not hide or modify games in Steam itself.
+- An unlocked tab relocks when you switch to another tab or leave Library. Tabs also relock on plugin reload, account changes, suspend/resume, and activation of Steam's device lock screen. **Lock tab now** and **Lock all protected tabs** are also available.
+- Removing protection or changing the PIN requires the current PIN. Changing it relocks every protected tab.
+- The PIN screen supports six-digit entry through controller buttons, touch targets, or a numeric keyboard. Controller mappings are displayed on the keys; Menu/Start erases a digit and View/Select cancels. This is a custom screen with its own mappings, not Steam's device PIN screen.
+
+## Build and install this fork
+
+Use Node.js 20 or newer, pnpm 9, and Python 3.10 or newer. With pnpm installed:
+
+```sh
+pnpm install --frozen-lockfile
+pnpm typecheck
+pnpm test
+pnpm package
+```
+
+The installable ZIP is `artifacts/TabMaster-Lock_v0.1.0.zip`. In Decky settings, enable Developer mode and use **Install Plugin from ZIP File**.
+
+Back up existing TabMaster settings, then disable the original TabMaster before enabling this fork: both patch the same library route. This fork has a distinct plugin name/settings directory. Use TabMaster's existing backup/restore controls if you want to transfer tabs. The store version and upstream release downloads below do **not** include this fork's lock feature.
+
+This is an experimental build. TypeScript checking and 18 automated tests pass. Installation, Hidden-tab gating, wrong/correct PIN handling, manual relocking, restart persistence, and keypad layout/keyboard input have been exercised on a Steam Deck with Decky 3.2.8. Physical controller input and actual suspend/resume still need acceptance testing. See [the device test report and checklist](docs/DEVICE-TESTING.md). After hot-reloading or switching plugin versions, leave and reopen Library.
+
+## PIN storage and recovery
+
+Only a random salt and scrypt verifier are persisted, in `tab-locks.json` inside Decky's settings directory for this plugin, using atomic writes and file permissions `0600`. PINs are not stored in tab settings, exported with ordinary settings backups, or logged by this plugin. Unlock sessions exist only in memory. Failed PIN attempts are throttled after five failures; the delay increases to a maximum of five minutes. This attempt counter resets when the backend restarts.
+
+Treat this as a privacy feature for selected tabs. Disabling Decky/the plugin or using another Steam view bypasses it. It does not encrypt games or prevent launching them. Steam updates can break the private UI hooks this fork inherits from TabMaster.
+
+If you forget the PIN, stop/disable the plugin and move its `tab-locks.json` aside in Desktop Mode, retaining a private backup. Reloading the plugin then removes all PIN protection for every account in that file. A corrupt lock file is never silently reset: library content stays gated after the lock controller fails to load. Ordinary tab backup/restore does not reset or transfer PIN protection. A newly duplicated tab has its own ID and is unprotected until you explicitly protect it.
+
+## Upstream documentation
+
+The following describes the original TabMaster plugin and its store releases.
+
 # Tab Master
 
 A plugin for customizing, adding, and removing Library Tabs.

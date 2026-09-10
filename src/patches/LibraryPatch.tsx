@@ -7,6 +7,7 @@ import { LogController } from '../lib/controllers/LogController'
 import { LibraryMenu } from '../components/context-menus/LibraryMenu'
 import { MicroSDeckInterop } from '../lib/controllers/MicroSDeckInterop'
 import { addPatch } from '../lib/Utils'
+import { LockedTab, TabGuard } from '../components/locks/PinScreen'
 
 let TabAppGridComponent: TabAppGridComponent | undefined
 
@@ -23,14 +24,17 @@ export const patchLibrary = (tabMasterManager: TabMasterManager): RoutePatch => 
                 LogController.raiseError('Failed to find outer library element to patch')
                 return ret1
             }
-            const [refresh, setRefresh] = useState(false)
+            const [, setRefresh] = useState(0)
 
             let innerPatch: Patch
             let memoCache: any
 
             useEffect(() => {
-                tabMasterManager.registerRerenderLibraryHandler(() => setRefresh(!refresh))
-                return innerPatch.unpatch()
+                tabMasterManager.registerRerenderLibraryHandler(() => setRefresh(value => value + 1))
+                return () => {
+                    innerPatch?.unpatch()
+                    tabMasterManager.registerRerenderLibraryHandler(() => {})
+                }
             })
 
             const isMicroSDeckInstalled = MicroSDeckInterop.isInstallOk(true)
@@ -84,7 +88,7 @@ export const patchLibrary = (tabMasterManager: TabMasterManager): RoutePatch => 
                                     return original
                                 }
 
-                                let tabTemplate = tabs.find((tab: SteamTab) => tab?.id === 'AllGames')
+                                const tabTemplate = tabs.find((tab: SteamTab) => tab?.id === 'AllGames')
                                 if (tabTemplate === undefined) {
                                     LogController.raiseError(`Couldn't find default tab "AllGames" to copy from`)
                                     return original
@@ -110,13 +114,32 @@ export const patchLibrary = (tabMasterManager: TabMasterManager): RoutePatch => 
                                 if (tabMasterManager.hasSettingsLoaded) {
                                     let tablist = tabMasterManager.getTabs().visibleTabsList
                                     patchedTabs = tablist.flatMap(tabContainer => {
+                                        const locks = tabMasterManager.locks
+                                        if (locks.isLocked(tabContainer.id)) {
+                                            return {
+                                                id: tabContainer.id,
+                                                title: tabContainer.title,
+                                                content: <LockedTab locks={locks} id={tabContainer.id} title={tabContainer.title} />,
+                                                renderTabAddon: () => '🔒',
+                                                footer: {
+                                                    onMenuActionDescription: 'Tab Master',
+                                                    onMenuButton: getShowMenu(tabContainer.id, tabMasterManager),
+                                                },
+                                            }
+                                        }
+                                        const guard = (tab: SteamTab | null): SteamTab[] => tab ? [{
+                                            ...tab,
+                                            content: <TabGuard locks={locks} id={tab.id} title={tabContainer.title}
+                                                renderContent={() => tab.content} />,
+                                            renderTabAddon: () => locks.isLocked(tab.id) ? '🔒' : tab.renderTabAddon?.(),
+                                        }] : []
                                         if (tabContainer.filters) {
                                             const footer = {
                                                 ...(tabTemplate.footer ?? {}),
                                                 onMenuButton: getShowMenu(tabContainer.id, tabMasterManager),
                                                 onMenuActionDescription: 'Tab Master',
                                             }
-                                            return (
+                                            return guard(
                                                 (tabContainer as CustomTabContainer).getActualTab(
                                                     TabAppGrid,
                                                     TabContext,
@@ -124,10 +147,10 @@ export const patchLibrary = (tabMasterManager: TabMasterManager): RoutePatch => 
                                                     footer,
                                                     collectionsAppFilterGamepad,
                                                     isMicroSDeckInstalled
-                                                ) || []
+                                                )
                                             )
                                         } else {
-                                            return (
+                                            return guard(
                                                 tabs.find(actualTab => {
                                                     if (actualTab.id === tabContainer.id) {
                                                         if (!actualTab.footer) actualTab.footer = {}
@@ -139,23 +162,29 @@ export const patchLibrary = (tabMasterManager: TabMasterManager): RoutePatch => 
                                                         return true
                                                     }
                                                     return false
-                                                }) ?? []
+                                                }) ?? null
                                             )
                                         }
                                     })
                                 } else {
-                                    patchedTabs = tabs
+                                    patchedTabs = tabs.map(tab => ({
+                                        ...tab,
+                                        content: <TabGuard locks={tabMasterManager.locks} id={tab.id} title={tab.title}
+                                            renderContent={() => tab.content} />,
+                                        renderTabAddon: () => tabMasterManager.locks.isLocked(tab.id) ? '🔒' : tab.renderTabAddon?.(),
+                                    }))
                                 }
 
                                 return isNested ? [patchedTabs, original[1]] : patchedTabs
-                            }, deps)
+                            }, [...deps, tabMasterManager.locks.revision])
                         }
 
                         hooks.useMemo = fakeUseMemo
-                        const res = origMemoComponent(...args)
-                        hooks.useMemo = realUseMemo
-
-                        return res
+                        try {
+                            return origMemoComponent(...args)
+                        } finally {
+                            hooks.useMemo = realUseMemo
+                        }
                     })
 
                     memoCache = ret2.type

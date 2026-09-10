@@ -11,6 +11,7 @@ import { TabErrorController } from '../lib/controllers/TabErrorController'
 import { TabProfileManager } from './TabProfileManager'
 import { AUTO_BACKUP_NAME } from '../constants'
 import { reaction } from '../lib/mobx'
+import { TabLockController } from '../lib/controllers/TabLockController'
 
 /**
  * Converts a list of filters into a 1D array.
@@ -42,6 +43,7 @@ function isDepreciatedStoreMap(
  * Class that handles TabMaster's core state.
  */
 export class TabMasterManager {
+    public readonly locks = new TabLockController(() => this.update())
     private tabsMap: Map<string, TabContainer>
     private visibleTabsList: TabContainer[] = []
     private hiddenTabsList: TabContainer[] = []
@@ -485,6 +487,8 @@ export class TabMasterManager {
         for (const disposer of Object.values(this.collectionDisposers)) {
             disposer()
         }
+        this.disposers = []
+        this.collectionDisposers = {}
     }
 
     /**
@@ -699,6 +703,11 @@ export class TabMasterManager {
      * Loads the user's tabs from the backend.
      */
     loadTabs = async () => {
+        this.disposeReactions()
+        this.hasLoaded = false
+        this.tabsMap.clear()
+        this.visibleTabsList = []
+        this.hiddenTabsList = []
         this.initReactions()
         let settings = await PythonInterop.getTabs()
         const profiles = await PythonInterop.getTabProfiles()

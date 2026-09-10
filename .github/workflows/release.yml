@@ -1,9 +1,8 @@
 name: Release
 
 on:
-  push:
-    branches:
-      - "release"
+  # Retained upstream release automation; fork builds use check.yml.
+  workflow_dispatch:
 
 jobs:
   create-release:

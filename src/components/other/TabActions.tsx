@@ -6,6 +6,8 @@ import { showModalDuplicateTab, showModalEditTab } from '../modals/EditTabModal'
 import { DestructiveModal } from '../generic/DestructiveModal'
 import { CustomTabContainer } from '../../state/CustomTabContainer'
 import { showAddCollectionModal } from '../modals/AddCollectionModal'
+import { TabLockMenu } from '../locks/TabLockMenu'
+import { useTabLocks } from '../locks/PinScreen'
 
 interface TabActionsContextMenuProps {
     tabContainer: TabContainer
@@ -16,6 +18,9 @@ interface TabActionsContextMenuProps {
  * The context menu for Tab Actions.
  */
 export const TabActionsContextMenu: VFC<TabActionsContextMenuProps> = ({ tabContainer, tabMasterManager }) => {
+    const locks = useTabLocks(tabMasterManager.locks)
+    const lockMenu = <TabLockMenu locks={locks} id={tabContainer.id} title={tabContainer.title} />
+    if (locks.isLocked(tabContainer.id)) return <Menu label='Locked tab'>{lockMenu}</Menu>
     const menuItems = [<MenuItem onSelected={() => tabMasterManager.hideTab(tabContainer.id)}>Hide</MenuItem>]
 
     if (tabContainer.filters) {
@@ -65,7 +70,7 @@ export const TabActionsContextMenu: VFC<TabActionsContextMenuProps> = ({ tabCont
             </MenuItem>
         )
     }
-    return <Menu label='Actions'>{menuItems}</Menu>
+    return <Menu label='Actions'>{lockMenu}{menuItems}</Menu>
 }
 
 interface TabActionButtionProps {

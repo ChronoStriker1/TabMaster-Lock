@@ -14,7 +14,9 @@ export const QamStyles: VFC<{}> = ({}) => {
       }
         
       .tab-master-scope {
-        width: inherit;
+        width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
         height: inherit;
 
         flex: 1 1 1px;
@@ -34,6 +36,7 @@ export const QamStyles: VFC<{}> = ({}) => {
 
       .tab-master-scope .${gamepadDialogClasses.FieldChildrenInner} {
         margin: 0px 16px;
+        min-width: 0;
       }
       .tab-master-scope .${gamepadDialogClasses.FieldLabel} {
         margin-left: 16px;

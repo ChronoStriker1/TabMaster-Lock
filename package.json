@@ -1,18 +1,21 @@
 {
-  "name": "tabmaster",
-  "version": "2.16.2",
-  "description": "Gives you full control over your Steam library! Support for customizing, adding, and hiding Library Tabs.",
+  "name": "tabmaster-lock",
+  "version": "0.1.0",
+  "description": "TabMaster fork with six-digit PIN protection for individual library tabs.",
   "type": "module",
+  "packageManager": "pnpm@9.15.9",
   "scripts": {
     "build": "shx rm -rf dist && rollup -c",
     "watch": "rollup -c -w",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "python3 -m unittest discover -s tests -v && node --test tests/*.test.mjs",
+    "typecheck": "tsc --noEmit",
+    "package": "pnpm build && python3 scripts/package_plugin.py",
     "prepare": "husky",
     "createDist": "rsync -r --exclude \"src/\" --exclude \"__pycache__\" --exclude \"node_modules\" /plugin/ /out/"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Tormak9970/TabMaster.git"
+    "url": "git+https://github.com/ChronoStriker1/TabMaster-Lock.git"
   },
   "keywords": [
     "decky",
@@ -36,9 +39,9 @@
   ],
   "license": "GPL-3",
   "bugs": {
-    "url": "https://github.com/Tormak9970/TabMaster/issues"
+    "url": "https://github.com/ChronoStriker1/TabMaster-Lock/issues"
   },
-  "homepage": "https://github.com/Tormak9970/TabMaster#readme",
+  "homepage": "https://github.com/ChronoStriker1/TabMaster-Lock#readme",
   "devDependencies": {
     "@commitlint/cli": "^17.8.1",
     "@commitlint/config-conventional": "^17.8.1",

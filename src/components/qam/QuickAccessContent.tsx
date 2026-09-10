@@ -4,7 +4,6 @@ import {
     Focusable,
     Navigation,
     showContextMenu,
-    quickAccessMenuClasses,
     showModal,
     ConfirmModal,
 } from '@decky/ui'
@@ -289,8 +288,9 @@ export interface QuickAccessTitleViewProps {
 
 const buttonStyle = {
     height: '28px',
-    width: '40px',
+    width: '28px',
     minWidth: 0,
+    flexShrink: 0,
     padding: 0,
     display: 'flex',
     justifyContent: 'center',
@@ -303,12 +303,19 @@ export const QuickAccessTitleView: VFC<QuickAccessTitleViewProps> = ({ title, ta
             style={{
                 display: 'flex',
                 padding: '0',
-                flex: 'auto',
+                flex: '1 1 0',
+                minWidth: 0,
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '16px',
+                lineHeight: '20px',
+                letterSpacing: 'normal',
+                textTransform: 'none',
                 boxShadow: 'none',
             }}
-            className={quickAccessMenuClasses.Title}
+            className='tab-master-title'
         >
-            <div style={{ marginRight: 'auto' }}>{title}</div>
+            <div style={{ marginRight: 'auto', minWidth: 0, whiteSpace: 'nowrap' }}>{title}</div>
             <DialogButton
                 disabled={!tabMasterManager.hasSettingsLoaded}
                 onOKActionDescription='Manage Tab Profiles'

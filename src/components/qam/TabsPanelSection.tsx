@@ -4,6 +4,7 @@ import { TabIdEntryType } from './QuickAccessContent'
 import { TabActionsButton } from '../other/TabActions'
 import { useTabMasterContext } from '../../state/TabMasterContext'
 import { TabListLabel } from '../other/TabListLabel'
+import { showTabPin, useTabLocks } from '../locks/PinScreen'
 
 interface TabEntryInteractablesProps {
     entry: ReorderableEntry<TabIdEntryType>
@@ -15,6 +16,7 @@ interface TabsPanelSectionProps {
 
 export const TabsPanelSection: VFC<TabsPanelSectionProps> = ({ isMicroSDeckInstalled }) => {
     const { visibleTabsList, hiddenTabsList, tabsMap, tabMasterManager } = useTabMasterContext()
+    const locks = useTabLocks(tabMasterManager.locks)
 
     function TabEntryInteractables({ entry }: TabEntryInteractablesProps) {
         const tabContainer = tabsMap.get(entry.data!.id)!
@@ -31,6 +33,14 @@ export const TabsPanelSection: VFC<TabsPanelSectionProps> = ({ isMicroSDeckInsta
 
     return tabMasterManager.hasSettingsLoaded ? (
         <>
+            <PanelSection title='Tab locks'>
+                <ButtonItem layout='below' disabled={!locks.ready || !locks.status.configured} onClick={() => void locks.lock()}>Lock all protected tabs</ButtonItem>
+                <ButtonItem layout='below' disabled={!locks.ready || !locks.status.configured}
+                    onClick={() => showTabPin(locks, 'change', '', 'Change TabMaster PIN')}>Change PIN</ButtonItem>
+                <div style={{ padding: '8px 16px', fontSize: '12px', color: '#b8bcbf' }}>
+                    {locks.error || 'Protect a tab from its options menu. Games remain visible in other tabs, Home, and search.'}
+                </div>
+            </PanelSection>
             <PanelSection title='Tabs'>
                 <div className='seperator' />
                 <ReorderableList<TabIdEntryType>

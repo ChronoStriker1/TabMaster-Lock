@@ -27,17 +27,21 @@ declare global {
 }
 
 export default definePlugin(() => {
-    let libraryPatch: RoutePatch
-    let settingsPatch: RoutePatch
+    let libraryPatch: RoutePatch | undefined
+    let settingsPatch: RoutePatch | undefined
+    let mounted = true
 
     const tabMasterManager = new TabMasterManager()
     PluginController.setup(tabMasterManager)
 
     const loginUnregisterer = PluginController.initOnLogin(async () => {
         await MicroSDeckInterop.waitForLoad()
+        if (!mounted) return
         await tabMasterManager.loadTabs()
-        libraryPatch = patchLibrary(tabMasterManager)
-        settingsPatch = patchSettings(tabMasterManager)
+        if (!mounted) return
+        // The same manager survives account changes; don't stack route patches.
+        if (!libraryPatch) libraryPatch = patchLibrary(tabMasterManager)
+        if (!settingsPatch) settingsPatch = patchSettings(tabMasterManager)
     })
 
     routerHook.addRoute('/tab-master-docs', () => (
@@ -46,9 +50,9 @@ export default definePlugin(() => {
         </TabMasterContextProvider>
     ))
     return {
-        name: 'TabMaster',
+        name: 'TabMaster Lock',
         title: <></>,
-        titleView: <QuickAccessTitleView title='TabMaster' tabMasterManager={tabMasterManager} />,
+        titleView: <QuickAccessTitleView title='TabMaster Lock' tabMasterManager={tabMasterManager} />,
         content: (
             <TabMasterContextProvider tabMasterManager={tabMasterManager}>
                 <QuickAccessContent />
@@ -56,8 +60,9 @@ export default definePlugin(() => {
         ),
         icon: <TbLayoutNavbarExpand />,
         onDismount: () => {
-            routerHook.removePatch('/library', libraryPatch)
-            routerHook.removePatch('/settings', settingsPatch)
+            mounted = false
+            if (libraryPatch) routerHook.removePatch('/library', libraryPatch)
+            if (settingsPatch) routerHook.removePatch('/settings', settingsPatch)
             routerHook.removeRoute('/tab-master-docs')
 
             loginUnregisterer.unregister()

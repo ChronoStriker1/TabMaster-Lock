@@ -22,6 +22,8 @@ import { MicroSDeckInterop } from '../../lib/controllers/MicroSDeckInterop'
 import { TabProfilesSubMenu } from './TabProfileMenu'
 import { TabIdEntryType } from '../qam/QuickAccessContent'
 import { showAddCollectionModal } from '../modals/AddCollectionModal'
+import { TabLockMenu } from '../locks/TabLockMenu'
+import { useTabLocks } from '../locks/PinScreen'
 
 export interface LibraryMenuProps {
     closeMenu: () => void
@@ -69,9 +71,13 @@ const LibraryMenuItems: VFC<LibraryMenuItemsProps> = ({ selectedTabId, closeMenu
     const tabTitle = tabMasterManager.getTabs().tabsMap.get(selectedTabId)?.title
     const tabContainer = tabsMap.get(selectedTabId)
     const isCustomTab = !!tabContainer?.filters
+    const locks = useTabLocks(tabMasterManager.locks)
+    const lockMenu = <TabLockMenu locks={locks} id={selectedTabId} title={tabTitle ?? 'Tab'} />
+    if (locks.isLocked(selectedTabId)) return lockMenu
 
     return (
         <>
+            {lockMenu}
             <MenuItem
                 //@ts-ignore
                 className={gamepadContextMenuClasses.Positive}

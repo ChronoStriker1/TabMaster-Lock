@@ -37,6 +37,8 @@ dist/
 __pycache__/
 
 .pnpm-store/
+artifacts/
+tab-locks.json
 
 /.yalc
 yalc.lock
