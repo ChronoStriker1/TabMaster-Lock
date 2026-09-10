@@ -1,153 +1,101 @@
 # TabMaster Lock
 
-A fork of [TabMaster](https://github.com/Tormak9970/TabMaster), based on upstream 2.16.2 (`cd01770a80a37e0692e76ad8083719c15205f5d9`), with a separate six-digit PIN for selected library tabs. Original history, credits, and license are preserved.
+PIN-protected library tabs for Steam Deck. A fork of [TabMaster](https://github.com/Tormak9970/TabMaster) that keeps its tab customization and adds a separate six-digit plugin PIN.
 
-## Lock behavior
+[Download v0.1.0](https://github.com/ChronoStriker1/TabMaster-Lock/releases/tag/v0.1.0) · [Report an issue](https://github.com/ChronoStriker1/TabMaster-Lock/issues) · [Testing status](docs/DEVICE-TESTING.md)
 
-- Protect either a custom or default tab using **Protect with PIN** in its options menu. The first protected tab asks you to choose and confirm a PIN.
-- One TabMaster PIN is used per Steam account. Each protected tab unlocks independently.
-- Locked tabs show their title and a lock screen. Their game grid, game count, and edit/duplicate/snapshot actions are unavailable until unlocked.
-- Games remain visible in other tabs, Home, search, and other Steam views. Protection does not hide or modify games in Steam itself.
-- An unlocked tab relocks when you switch to another tab or leave Library. Tabs also relock on plugin reload, account changes, suspend/resume, and activation of Steam's device lock screen. **Lock tab now** and **Lock all protected tabs** are also available.
-- Removing protection or changing the PIN requires the current PIN. Changing it relocks every protected tab.
-- The PIN screen supports six-digit entry through controller buttons, touch targets, or a numeric keyboard. Controller mappings are displayed on the keys; Menu/Start erases a digit and View/Select cancels. This is a custom screen with its own mappings, not Steam's device PIN screen.
+> This protects content **inside selected tabs only**. Games remain visible in other tabs, Home, and search. It is a privacy feature, not a Steam-wide game lock.
 
-## Build and install this fork
+## See it in action
 
-Use Node.js 20 or newer, pnpm 9, and Python 3.10 or newer. With pnpm installed:
+**Protected tab:** game tiles and the game count stay hidden until you unlock it.
+
+![Protected Hidden tab with an Unlock tab button and no visible games](assets/screenshots/locked-tab.png)
+
+**Unlock prompt:** enter your separate six-digit plugin PIN using the displayed controller mappings, touchscreen, or keyboard.
+
+![Unlock Hidden dialog with six empty PIN indicators and controller-mapped number buttons](assets/screenshots/pin-entry.png)
+
+These screenshots show the actual plugin on a Steam Deck. No games or entered PIN digits are visible; the account header is excluded.
+
+## Install from GitHub
+
+You need [Decky Loader installed](https://github.com/SteamDeckHomebrew/decky-loader#installation). TabMaster Lock is an experimental GitHub release; the original TabMaster store download does not include these lock features.
+
+**Already using TabMaster?** Back up its settings and disable it before enabling this fork. Both plugins modify the same Library screen and must not run together. Use TabMaster's backup/restore controls to transfer your tabs; the fork uses a separate settings directory.
+
+### Option 1: Paste the release URL into Decky
+
+1. In Gaming Mode, press **…**, open **Decky** (the plug icon), and open its **Settings** (gear icon).
+2. Under **General**, enable **Developer mode**, then open **Developer**.
+3. Find **Install Plugin from URL** and paste this direct ZIP link:
+
+   ```text
+   https://github.com/ChronoStriker1/TabMaster-Lock/releases/download/v0.1.0/TabMaster-Lock_v0.1.0.zip
+   ```
+
+4. Select **Install** and confirm the installation prompt.
+5. Open **TabMaster Lock** in Decky. Leave and reopen Library if it was already open.
+
+Use the ZIP asset URL above—not the repository's `.git` URL, its web page, or GitHub's **Source code (zip)** download. Decky's installer needs the built plugin archive. See [Decky's installation options](https://github.com/SteamDeckHomebrew/decky-loader#getting-started).
+
+### Option 2: Download the ZIP first
+
+1. In Desktop Mode, open the [v0.1.0 release](https://github.com/ChronoStriker1/TabMaster-Lock/releases/tag/v0.1.0).
+2. Under **Assets**, download **TabMaster-Lock_v0.1.0.zip**. Do not extract it.
+3. Return to Gaming Mode and enable Decky's Developer mode as above.
+4. Open **Decky Settings → Developer → Install Plugin from ZIP File**, choose the downloaded ZIP, and confirm.
+
+For future updates, check this fork's [releases](https://github.com/ChronoStriker1/TabMaster-Lock/releases) and install the new plugin ZIP. Do not replace it with an upstream TabMaster release if you want to keep the lock feature.
+
+## Protect and unlock a tab
+
+1. Open **Decky → TabMaster Lock**, then the **…** options beside the tab you want to protect. You can also use the tab's Library options menu.
+2. Choose **Protect with PIN**. The first time, enter a six-digit PIN twice. This is **separate from your Steam Deck unlock PIN**.
+3. Visit the protected tab and select **Unlock tab** to enter the PIN.
+4. Switch to another tab or leave Library to relock it automatically.
+
+One PIN is used per Steam account, but each protected tab unlocks independently. Custom and built-in tabs can be protected. While locked, a tab's game grid, count, and edit/duplicate/snapshot actions are unavailable.
+
+The PIN screen displays each digit's controller mapping. **Menu/Start** erases a digit; **View/Select** cancels. Keyboard users can type digits and use **Backspace** or **Escape**. This is a custom screen with its own mappings, not Steam's device PIN screen.
+
+### Manage protection
+
+- **Lock tab now** relocks one tab; **Lock all protected tabs** in Decky relocks them all.
+- **Change PIN** requires the current PIN and relocks every protected tab.
+- Removing protection also requires the current PIN, even if the tab is already unlocked.
+- Tabs also relock on plugin reload, Steam account changes, suspend/resume, and activation of Steam's device lock screen.
+- A duplicated tab is independent and starts unprotected. Ordinary tab backups do not export PIN protection.
+
+## Limitations and recovery
+
+**Experimental:** tested with Decky 3.2.8. Tab locking, wrong/correct PIN handling, restart persistence, automatic relocking on tab exit, and menu layout have been exercised on a Steam Deck. Physical controller input and actual suspend/resume still need acceptance testing. See the [device test report](docs/DEVICE-TESTING.md).
+
+Disabling Decky or this plugin bypasses protection. Games are not encrypted or prevented from launching elsewhere. Steam updates can break the private UI hooks inherited from TabMaster.
+
+**PIN storage:** only a random salt and scrypt verifier are saved in `tab-locks.json` in the plugin's Decky settings directory, with atomic writes and permissions `0600`. PINs are not saved in ordinary tab settings or logged by this plugin. Unlock sessions exist only in memory. Failed attempts are throttled after five failures, up to a five-minute delay; the counter resets when the backend restarts.
+
+**Forgot your PIN?** Disable/stop the plugin. In Desktop Mode, move its `tab-locks.json` out of the plugin's settings directory and keep it as a private backup. Reloading the plugin removes protection for **all accounts** in that file; configure a new PIN and protect your tabs again. A corrupt lock file fails closed rather than silently resetting.
+
+**Return to original TabMaster:** disable TabMaster Lock, re-enable TabMaster, and leave/reopen Library. Keep your original settings backup until you have checked your tabs.
+
+## Build from Git
+
+For development or unreleased changes, build on a computer with Git, Node.js 22+, pnpm 9.15.9, and Python 3.10+. Building from Git is optional; normal installation only needs the release ZIP.
 
 ```sh
+git clone https://github.com/ChronoStriker1/TabMaster-Lock.git
+cd TabMaster-Lock
 pnpm install --frozen-lockfile
 pnpm typecheck
 pnpm test
 pnpm package
 ```
 
-The installable ZIP is `artifacts/TabMaster-Lock_v0.1.0.zip`. In Decky settings, enable Developer mode and use **Install Plugin from ZIP File**.
+Copy `artifacts/TabMaster-Lock_v0.1.0.zip` to your Deck and install it through Decky's **Install Plugin from ZIP File** option. A plain Git clone is not an installable plugin because it does not contain the built frontend.
 
-Back up existing TabMaster settings, then disable the original TabMaster before enabling this fork: both patch the same library route. This fork has a distinct plugin name/settings directory. Use TabMaster's existing backup/restore controls if you want to transfer tabs. The store version and upstream release downloads below do **not** include this fork's lock feature.
+## Credits and contributing
 
-This is an experimental build. TypeScript checking and 18 automated tests pass. Installation, Hidden-tab gating, wrong/correct PIN handling, manual relocking, restart persistence, and keypad layout/keyboard input have been exercised on a Steam Deck with Decky 3.2.8. Physical controller input and actual suspend/resume still need acceptance testing. See [the device test report and checklist](docs/DEVICE-TESTING.md). After hot-reloading or switching plugin versions, leave and reopen Library.
+Fork maintained by **ChronoStriker1**, based on TabMaster 2.16.2 ([upstream commit](https://github.com/Tormak9970/TabMaster/commit/cd01770a80a37e0692e76ad8083719c15205f5d9)). Original history and credits are preserved. Thanks to **Travis Lane (Tormak), Jesse Bofill, and Kernel Panic** for TabMaster.
 
-## PIN storage and recovery
-
-Only a random salt and scrypt verifier are persisted, in `tab-locks.json` inside Decky's settings directory for this plugin, using atomic writes and file permissions `0600`. PINs are not stored in tab settings, exported with ordinary settings backups, or logged by this plugin. Unlock sessions exist only in memory. Failed PIN attempts are throttled after five failures; the delay increases to a maximum of five minutes. This attempt counter resets when the backend restarts.
-
-Treat this as a privacy feature for selected tabs. Disabling Decky/the plugin or using another Steam view bypasses it. It does not encrypt games or prevent launching them. Steam updates can break the private UI hooks this fork inherits from TabMaster.
-
-If you forget the PIN, stop/disable the plugin and move its `tab-locks.json` aside in Desktop Mode, retaining a private backup. Reloading the plugin then removes all PIN protection for every account in that file. A corrupt lock file is never silently reset: library content stays gated after the lock controller fails to load. Ordinary tab backup/restore does not reset or transfer PIN protection. A newly duplicated tab has its own ID and is unprotected until you explicitly protect it.
-
-## Upstream documentation
-
-The following describes the original TabMaster plugin and its store releases.
-
-# Tab Master
-
-A plugin for customizing, adding, and removing Library Tabs.
-
-![Main View](./assets/thumbnail.png)
-
-# Overview
-
-TabMaster allows you to have full control over your library tabs! You can hide, filter, reorder them as you please.
-
-# Using the plugin
-
-Once you have installed TabMaster, open it in the Quick Access Menu (QAM), where you can reorder, hide and add tabs!
-
-# Installation
-
-## Decky Store
-This is the preferred way to install TabMaster.
-
-### Steps
-1. [Install the Decky plugin loader](https://github.com/SteamDeckHomebrew/decky-loader#installation)
-2. Use the built in plugin store to download the Tab Master Plugin
-   - If you want the bleeding edge version, use Decky's Testing Store
-
-## From Zip
-This is the best way to get fixes for TabMaster early if you're having issues
-
-### Steps
-1. Go into **Desktop Mode** on your device, and open your preferred browser
-2. Go to https://github.com/Tormak9970/TabMaster/releases/latest
-3. Download the file `TabMaster_vX.X.X.zip` (ex: `TabMaster_v2.15.0.zip`), and save it somewhere easy to remember
-4. Go back to **Game Mode**
-5. Open Decky's Settings menu
-6. On the **General** tab, scroll down and make sure you have **Developer mode** toggled on
-7. Go to the **Developer** tab
-8. Click **Install Plugin from ZIP File**, and browse to where you downloaded the zip file earlier
-
-# Features
-
-Features Include:<br/>
-
-- Making custom tabs with editable filters
-- Hiding default and custom tabs
-- Reordering default and custom tabs
-
-Available Filters:
-
-- **Collection** - Selects apps that are in a certain Steam Collection.
-- **Installed** - Selects apps that are installed/uninstalled.
-- **Regex** - Selects apps whose titles match a [regular expression](https://medium.com/factory-mind/regex-tutorial-a-simple-cheatsheet-by-examples-649dc1c3f285) (for testing, use [this website](https://regexr.com/)).
-- **Friends** - Selects apps that are also owned by any/all listed friends.
-- **Tags** - Selects apps that have any/all specific tags.
-- **Whitelist** - Selects apps that are added to the list.
-- **Blacklist** - Selects apps that are not added to the list.
-- **Merge** - Selects apps that pass a subgroup of filters.
-- **Platform** - Selects Steam or non-Steam apps.
-- **Deck Compatibility** - Selects apps that have a specific Steam Deck compatibilty status.
-- **SteamOS Compatibility** - Selects apps that have a specific SteamOS compatibilty status.
-- **Review Score** - Selects apps that are greater/less than the provided metacritic/steam review score.
-- **Time Played** - Selects apps that have a play time greater/less than the provided time.
-- **Size on Disk** - Selects apps that have an install size greater/less than the provided size.
-- **Release Date** - Selects apps that were released before/after the provided date.
-- **Last Played** - Selects apps that were last played before/after the provided date.
-- **Demo** - Selects apps that are/aren't demos.
-- **Coming Soon** - Selects apps that are/aren't coming soon.
-- **Streamable** - Selects apps that can/can't be streamed from another computer.
-- **Steam Features** - Selects apps that support specific Steam Features.
-- **MicroSD Card** - Selects apps that are present on the inserted/specific MicroSD Card.
-- **Install Folder** - Selects apps that are present on the specific install folder.
-
-If you want us to add another filter, please open a filter request [here](https://github.com/Tormak9970/TabMaster/issues/new/choose).
-
-Filter Examples:
-
-- **Collection**<br/><img src="./assets/filters/docs_collection-example.png" width="600" />
-- **Installed**<br/><img src="./assets/filters/docs_installed-example.png" width="600" />
-- **Regex**<br/><img src="./assets/filters/docs_regex-example.png" width="600" />
-- **Friends**<br/><img src="./assets/filters/docs_friends-example.png" width="600" />
-- **Tags**<br/><img src="./assets/filters/docs_tags-example.png" width="600" />
-- **Whitelist**<br/><img src="./assets/filters/docs_whitelist-example.png" width="600" />
-- **Blacklist**<br/><img src="./assets/filters/docs_blacklist-example.png" width="600" />
-- **Merge**<br/><img src="./assets/filters/docs_merge-example.png" width="600" />
-- **Platform**<br/><img src="./assets/filters/docs_platform-example.png" width="600" />
-- **Deck Compatibility**<br/><img src="./assets/filters/docs_deck-compat-example.png" width="600" />
-- **SteamOS Compatibility**<br/><img src="./assets/filters/docs_steamos-compat-example.png" width="600" />
-- **Review Score**<br/><img src="./assets/filters/docs_review-score-example.png" width="600" />
-- **Time Played**<br/><img src="./assets/filters/docs_time-played-example.png" width="600" />
-- **Size on Disk**<br/><img src="./assets/filters/docs_size-on-disk-example.png" width="600" />
-- **Release Date**<br/><img src="./assets/filters/docs_release-date-example.png" width="600" />
-- **Purchase Date**<br/><img src="./assets/filters/docs_purchase-date-example.png" width="600" />
-- **Last Played**<br/><img src="./assets/filters/docs_last-played-example.png" width="600" />
-- **Family Sharing**<br/><img src="./assets/filters/docs_family-sharing-example.png" width="600" />
-- **Demo**<br/><img src="./assets/filters/docs_demo-example.png" width="600" />
-- **Coming Soon**<br/><img src="./assets/filters/docs_coming-soon-example.png" width="600" />
-- **Streamable**<br/><img src="./assets/filters/docs_streamable-example.png" width="600" />
-- **Steam Features**<br/><img src="./assets/filters/docs_steam-features-example.png" width="600" />
-- **Achievements**<br/><img src="./assets/filters/docs_achievements-example.png" width="600" />
-- **MicroSD Card**<br/><img src="./assets/filters/docs_microsd-card-example.png" width="600" />
-- **Install Folder**<br/><img src="./assets/filters/docs_install-folder-example.png" width="600" />
-
-# Contributing
-
-If you're interested in fixing a bug, submitting a new feature, or just helping out, please read the [Contributor Guidelines](./Contributing.md)
-
-# Licensing
-
-- This program is licensed under the [GNU General Public License Version 3](https://www.gnu.org/licenses/#GPL) and [BSD 3-Clause License](https://opensource.org/license/bsd-3-clause/) <br/>
-- Additionally, please provide appropriate credit for code usage
-
-Copyright Travis Lane (Tormak) and Jessebofill
+Tab customization, filters, profiles, and related documentation remain available in the plugin's Docs screen and the [upstream project](https://github.com/Tormak9970/TabMaster). See [Contributing.md](Contributing.md) for contribution guidance and [LICENSE](LICENSE) for the GNU GPL v3 terms. Retain applicable upstream and third-party license notices.
