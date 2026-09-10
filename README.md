@@ -48,12 +48,24 @@ Use the ZIP asset URL above—not the repository's `.git` URL, its web page, or 
 
 For future updates, check this fork's [releases](https://github.com/ChronoStriker1/TabMaster-Lock/releases) and install the new plugin ZIP. Do not replace it with an upstream TabMaster release if you want to keep the lock feature.
 
-## Protect and unlock a tab
+## Add a lock to a tab
 
-1. Open **Decky → TabMaster Lock**, then the **…** options beside the tab you want to protect. You can also use the tab's Library options menu.
-2. Choose **Protect with PIN**. The first time, enter a six-digit PIN twice. This is **separate from your Steam Deck unlock PIN**.
-3. Visit the protected tab and select **Unlock tab** to enter the PIN.
-4. Switch to another tab or leave Library to relock it automatically.
+1. In Gaming Mode, press the Steam Deck's **…** button and select the **Decky** plug icon.
+2. Open **TabMaster Lock** and scroll to the **Tabs** list.
+3. Find the tab you want to protect—for example, **Hidden**—and select the **…** options button beside its name.
+4. Select **Protect with PIN**.
+5. If this is your first protected tab, choose a **six-digit plugin PIN**, then enter it again to confirm. If you already have a plugin PIN for this Steam account, enter that PIN to protect the additional tab.
+6. Close Decky and visit the tab in **Library**. It should show a lock screen and **Unlock tab** instead of its games.
+
+The PIN is **separate from your Steam Deck unlock PIN**. Naming a tab “Hidden” or hiding a tab in TabMaster does not automatically protect it: you must select **Protect with PIN** for each tab you want to lock. You can also access that action through the tab's Library options menu.
+
+If the menu already shows **Unlock with PIN** or **Lock tab now**, that tab already has protection enabled. To undo it, choose **Remove PIN protection** and enter your current plugin PIN.
+
+### Unlock and check automatic relocking
+
+1. Visit the protected tab and select **Unlock tab**.
+2. Enter your plugin PIN to reveal its games.
+3. Switch to another tab or leave Library, then return. The tab should be locked again and ask for the PIN.
 
 One PIN is used per Steam account, but each protected tab unlocks independently. Custom and built-in tabs can be protected. While locked, a tab's game grid, count, and edit/duplicate/snapshot actions are unavailable.
 
